@@ -13,7 +13,7 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/svg",
             "environment": [],
-            "console": false,
+            "externalConsole": false,
             "preLaunchTask": "Build Release"
         },
         {
@@ -25,7 +25,7 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/svg",
             "environment": [],
-            "console": false,
+            "externalConsole": false,
             "preLaunchTask": "Build Debug"
         }
     ]

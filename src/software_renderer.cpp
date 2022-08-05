@@ -45,7 +45,9 @@ void SoftwareRendererImp::set_sample_rate( size_t sample_rate ) {
   // Task 4: 
   // You may want to modify this for supersampling support
   this->sample_rate = sample_rate;
-
+  // buffer size is right
+  sample_buffer.resize( 
+    4 * this->sample_rate * this->sample_rate * this->target_w * this->target_h);
 }
 
 void SoftwareRendererImp::set_render_target( unsigned char* render_target,
@@ -53,10 +55,15 @@ void SoftwareRendererImp::set_render_target( unsigned char* render_target,
 
   // Task 4: 
   // You may want to modify this for supersampling support
+  //this->render_target = render_target;
   this->render_target = render_target;
   this->target_w = width;
   this->target_h = height;
-
+  // height = height * sample_rate
+  // weight = weight * rample_rate
+  // each pixel has r g b a;
+  sample_buffer.resize( 
+    4 * this->sample_rate * this->sample_rate * this->target_w * this->target_h);
 }
 
 void SoftwareRendererImp::draw_element( SVGElement* element ) {
@@ -249,11 +256,12 @@ void SoftwareRendererImp::rasterize_triangle( float x0, float y0,
                                               Color color ) {
   // Task 3: 
   // Implement triangle rasterization
-  
+
   // find the rectangle that wraps the triangle
-  float sx0 = (int) x0, sy0 = (int) y0; 
-  float sx1 = (int) x1, sy1 = (int) y1;
-  float sx2 = (int) x2, sy2 = (int) y2;
+  // maybe larger because of supersampling
+  float sx0 = (int) (x0 * sample_rate), sy0 = (int) (y0 * sample_rate); 
+  float sx1 = (int) (x1 * sample_rate), sy1 = (int) (x0 * sample_rate);
+  float sx2 = (int) (x2 * sample_rate), sy2 = (int) (x0 * sample_rate);
 
   float max_x = max(sx0, max(sx1, sx2)) + 1.0f;
   float min_x = min(sx0, min(sx1, sx2));
@@ -270,8 +278,8 @@ void SoftwareRendererImp::rasterize_triangle( float x0, float y0,
   Vector2D vec12(x2 - x1, y2 - y1);
   Vector2D vec20(x0 - x2, y0 - y2);
 
-  int x_length = max_x - min_x;
-  int y_length = max_y - min_y;
+  int x_length = (max_x - min_x);
+  int y_length = (max_y - min_y);
 
   // traverse the rectangle
   for(int i = 0; i < y_length; i++){
@@ -284,7 +292,8 @@ void SoftwareRendererImp::rasterize_triangle( float x0, float y0,
       float cross1 = vec12.x * vec1p.y - vec12.y * vec1p.x;
       float cross2 = vec20.x * vec2p.y - vec20.y * vec2p.x;
       if(cross0 >=0 && cross1 >= 0 && cross2 >= 0) 
-        rasterize_point(iter_x, iter_y, color);
+        fill_sample((int)iter_x, (int)iter_y, color);
+        //rasterize_point(iter_x, iter_y, color);
       iter_x += 1.0f;
     }
     iter_y += 1.0f;
@@ -306,6 +315,30 @@ void SoftwareRendererImp::resolve( void ) {
   // Task 4: 
   // Implement supersampling
   // You may also need to modify other functions marked with "Task 4".
+  for(int x = 0; x < this->target_w; x++){
+    for(int y = 0; y < this->target_h; y++){
+      //cout << "iter: " << x << " " << y << endl;
+      //cout << 4 * (x + y * target_w) + 1 << endl;
+      //cout << 4 * (x * sample_rate + y * sample_rate * target_w) + 1 <<endl;
+      // render_target[4 * (x + y * target_w)    ] = (sample_buffer[4 * (x * sample_rate     + y * sample_rate * target_w)] +
+      //                                              sample_buffer[4 * (x * sample_rate + 1 + y * sample_rate * target_w)] +
+      //                                              sample_buffer[4 * (x * sample_rate     + (y * sample_rate + 1) * target_w)] +
+      //                                              sample_buffer[4 * (x * sample_rate + 1 + (y * sample_rate + 1) * target_w)])/4;
+      // render_target[4 * (x + y * target_w) + 1] = (sample_buffer[4 * (x * sample_rate     + y * sample_rate * target_w) + 1] +
+      //                                              sample_buffer[4 * (x * sample_rate + 1 + y * sample_rate * target_w) + 1] +
+      //                                              sample_buffer[4 * (x * sample_rate     + (y * sample_rate + 1) * target_w) + 1] +
+      //                                              sample_buffer[4 * (x * sample_rate + 1 + (y * sample_rate + 1) * target_w) + 1])/4;
+      // render_target[4 * (x + y * target_w) + 2] = (sample_buffer[4 * (x * sample_rate     + y * sample_rate * target_w) + 2] +
+      //                                              sample_buffer[4 * (x * sample_rate + 1 + y * sample_rate * target_w) + 2] +
+      //                                              sample_buffer[4 * (x * sample_rate     + (y * sample_rate + 1) * target_w) + 2] +
+      //                                              sample_buffer[4 * (x * sample_rate + 1 + (y * sample_rate + 1) * target_w) + 2])/4;
+      // render_target[4 * (x + y * target_w) + 3] = (sample_buffer[4 * (x * sample_rate     + y * sample_rate * target_w) + 3] +
+      //                                              sample_buffer[4 * (x * sample_rate + 1 + y * sample_rate * target_w) + 3] +
+      //                                              sample_buffer[4 * (x * sample_rate     + (y * sample_rate + 1) * target_w) + 3] +
+      //                                              sample_buffer[4 * (x * sample_rate + 1 + (y * sample_rate + 1) * target_w) + 3])/4;
+    }
+  }
+  sample_buffer.clear();
   return;
 
 }

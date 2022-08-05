@@ -79,6 +79,8 @@ class SoftwareRendererImp : public SoftwareRenderer {
                           size_t width, size_t height );
 
  private:
+  // Super sampling
+  std::vector<unsigned char> sample_buffer;
 
   // Primitive Drawing //
 
@@ -154,10 +156,10 @@ class SoftwareRendererImp : public SoftwareRenderer {
 
   // fill the sample                                     
   inline void fill_sample(int x, int y, Color& color){
-    render_target[4 * (x + y * target_w)    ] = (uint8_t) (color.r * 255);
-    render_target[4 * (x + y * target_w) + 1] = (uint8_t) (color.g * 255);
-    render_target[4 * (x + y * target_w) + 2] = (uint8_t) (color.b * 255);
-    render_target[4 * (x + y * target_w) + 3] = (uint8_t) (color.a * 255);
+    sample_buffer[4 * (x + y * target_w)    ] = (uint8_t) (color.r * 255);
+    sample_buffer[4 * (x + y * target_w) + 1] = (uint8_t) (color.g * 255);
+    sample_buffer[4 * (x + y * target_w) + 2] = (uint8_t) (color.b * 255);
+    sample_buffer[4 * (x + y * target_w) + 3] = (uint8_t) (color.a * 255);
   }
 }; // class SoftwareRendererImp
 
